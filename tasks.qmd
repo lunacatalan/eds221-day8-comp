@@ -1,0 +1,82 @@
+---
+title: "Day 8 Tasks"
+format: html
+editor: visual
+---
+
+## Review ggplot Basics
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+
+# new packages!
+library(patchwork) # piecing together charts
+library(ggrepel) # add repulsive labels
+library(gghighlight)
+library(paletteer)
+```
+
+### Read in data
+
+```{r}
+lizards <- read_csv(here::here("data_tidy", "lizards.csv"))
+```
+
+Create subset:
+
+1.  limit data for western whiptails, colorodo checkered and eastern fence lizards
+2.  add new column converted total length to cm
+3.  group by species and site
+4.  return summary with mean total length and sd of total length by species and site
+
+```{r}
+lizard_sub <- lizards %>% 
+  filter(common_name %in% c("western whiptail", "colorado checkered", "eastern fence")) %>% 
+  mutate(total_length_cm = total_length/10) %>% 
+  group_by(common_name, site) %>% 
+  summarize(mean_total_length = mean(total_length, na.rm = TRUE),
+            sd_total_length = sd(total_length, na.rm = TRUE))
+
+```
+
+## Scatterplot
+
+```{r}
+ggplot(data = lizards,
+       aes(x = total_length,
+           y = weight)) +
+  geom_point(
+    aes(color = common_name)) +
+  facet_wrap(~ common_name) + # split charts by common name; scales = FREE would make individual scales for each chart 
+  theme_classic()
+```
+
+```{r}
+ggplot(data = lizards,
+       aes(x = total_length,
+           y = weight)) +
+  geom_point(
+    aes(color = weight)) +
+  scale_y_continuous(limits = c(0, 100),
+                     breaks = seq(from = 0, to = 100, by = 20),
+                     expand = c(0, 0)) + # get rid of the space between data/axis 
+  scale_color_gradient(low = "orange",
+                       high = "navy")
+```
+
+## Bar Chart
+
+```{r}
+lizard_counts <- lizards %>% 
+  count(common_name)
+```
+
+```{r}
+ggplot(data = lizard_counts,
+       aes(x = n,
+           y = fct_reorder(common_name, n), # make into a factor, order by n
+           fill = common_name)) +
+  geom_col()
+```
