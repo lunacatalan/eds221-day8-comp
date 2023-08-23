@@ -1,0 +1,117 @@
+---
+title: "Day 8 Activities"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+
+library(patchwork) # piecing together charts
+library(ggrepel) # add repulsive labels
+library(gghighlight)
+library(paletteer)
+library(gapminder)
+library(sf)
+```
+
+## **Task 1: Do your data viz worst**
+
+Just like it takes a lot of work to make a really wonderful graph, it takes effort to make a graph really awful. Put effort and creativity into this - you will learn a lot in the process if you do.
+
+Using the \'space_launches.csv\' data (I\'ll drop this into Slack), create a new .Rmd and create your worst possible graph by customizing (from the ggplot default) in **at least 8 ways** - more encouraged - to make it as terrible as possible. The data were previously shared for #TidyTuesday, and descriptions of dataset & variables can be found [**here**](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-01-15). You can plot whatever variable(s) you choose, and make whatever graph type you want.
+
+**Once you\'re done, drop your worst graph (as a .png or .jpg) into the course Slack channel.**
+
+```{r}
+library(corrgram)
+space <- read_csv(here("space_launches.csv")) 
+
+space_count <- space %>% 
+  count(agency)
+
+space_merge <- space %>% 
+  left_join(space_count)
+  
+ggplot(data = space_merge,
+       aes(x = launch_year,
+           y = agency)) +
+  geom_bin_2d(bins = 20)
+
+library(ggridges)
+library(ggplot2)
+library(viridis)
+library(hrbrthemes)
+
+ggplot(data = space_merge,
+       aes(x = n,
+           y = launch_year,
+           fill = launch_year,
+           group = launch_year)) +
+  geom_density_ridges_gradient(scale = 40, rel_min_height = 0.01) +
+  scale_fill_viridis(name = "Launch Year", option = "E") +
+  labs(title = 'Number of Agency Flights Per Year',
+       y = "Launch Year",
+       x = "Agency")
+```
+
+## **Task 2: Wrangling practice with the SF Greenhouse Gas data**
+
+-   Download the San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv file (I\'ll put this in Slack). Information about the data is available [**here**](https://catalog.data.gov/dataset/san-francisco-communitywide-greenhouse-gas-inventory).
+
+-   Read in the SF emissions dataset, then complete the following:
+
+```{r}
+sf_gg_inventory <- read_csv(here("San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv"))
+```
+
+1.  Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by sector_general
+
+    ```{r}
+    total_1 <- sf_gg_inventory %>% 
+      group_by(Sector_General) %>% 
+      summarize(sum(Emissions_mtCO2e, na.rm = TRUE))
+    ```
+
+2.  Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by year and commodity type
+
+```{r}
+total_2 <- sf_gg_inventory %>% 
+  group_by(Calendar_Year, Commodity_Type) %>% 
+  summarize(sum(Emissions_mtCO2e, na.rm = TRUE))
+```
+
+1.  Create a subset of the data that only contains observations from 2005 on, only for observations where `Sector_Detail2` contains the pattern \"PG&E\", then limit to columns `Calendar_Year`, `Sector_Detail2` and `Emissions_mtCO2e`.
+
+```{r}
+sf_sub <- sf_gg_inventory %>% 
+  filter(Calendar_Year == 2005,
+         str_detect(Sector_Detail2,
+                    pattern = "PG&E")) %>% 
+  select(Calendar_Year, Sector_Detail2, Emissions_mtCO2e)
+```
+
+## **Task 3: Do your data viz best**
+
+Create a finalized graph (as perfect as you can make it) using the San Francisco GHG emissions dataset. **You** get to choose what you want to visualize. You can pick which variables & observations you\'re interested in. You may want to do some wrangling / summarizing first.
+
+Once you\'ve decided on what to plot, create the best graph that you can to communicate what\'s going on with the data.
+
+**Once you\'re done, drop your best graph (as a .png or .jpg) into the course Slack channel.**
+
+```{r}
+sf_inventory <- read_csv(here("San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv")) %>% 
+  clean_names() %>% 
+  rename(year = calendar_year) %>% 
+  select(year, commodity_type, emissions_mt_co2e, sector_gpc) %>% 
+  filter(-emissions_mt_co2e == 0.00)
+
+ggplot(data = sf_inventory,
+       aes(x = emissions_mt_co2e,
+           y = commodity_type,
+           fill = commodity_type)) +
+  geom_col(position = "stack") +
+  theme_minimal()
+```

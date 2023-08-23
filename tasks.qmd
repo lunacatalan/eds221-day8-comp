@@ -16,6 +16,8 @@ library(patchwork) # piecing together charts
 library(ggrepel) # add repulsive labels
 library(gghighlight)
 library(paletteer)
+library(gapminder)
+library(sf)
 ```
 
 ### Read in data
@@ -79,4 +81,76 @@ ggplot(data = lizard_counts,
            y = fct_reorder(common_name, n), # make into a factor, order by n
            fill = common_name)) +
   geom_col()
+```
+
+## More viz
+
+#### Repulsive Labels
+
+#### Annotations
+
+```{r}
+ggplot(data = gapminder,
+       aes(x = lifeExp,
+           y = gdpPercap)) +
+  geom_point() +
+  annotate("text", x = 40, y = 90000,
+           label = "LABELS!") +
+  geom_hline(yintercept = 70000, # draw a horizontal line 
+             linetype = "dotted", 
+             color = "navy") +
+  geom_vline(xintercept = mean(gapminder$lifeExp))
+```
+
+```{r}
+gapminder %>% 
+  filter(year == 2002, 
+         continent == "Europe") %>% 
+  ggplot(aes(x = gdpPercap,
+             y = lifeExp)) +
+  geom_point() +
+  # geom_point(shape = 23, 
+  #            size = 3,
+  #            color = "orange",
+  #            fill = "royal blue") +
+  geom_text_repel(aes(label = country)) + # will add labels over the points wihtout overlap with ggrepel
+ gghighlight(country == "Poland", 
+             label_key = country) + # highlight country
+  theme_classic()
+```
+
+```{r}
+gapminder %>% 
+  filter(year == 2007) %>% 
+  ggplot(aes(x = gdpPercap,
+             y = lifeExp)) +
+  geom_point() +
+  # geom_point(shape = 23, 
+  #            size = 3,
+  #            color = "orange",
+  #            fill = "royal blue") +
+  geom_text_repel(aes(label = country)) + # will add labels over the points wihtout overlap with ggrepel
+ gghighlight(continent == "Europe", 
+             label_key = country) + # highlight country
+  theme_classic()
+```
+
+#### Using sf package
+
+```{r}
+jornada_veg <- read_sf(here("data_raw", "spatial_vegetation", "doc.kml")) %>% 
+  select(name = Name) # only keep the name 
+
+ggplot() +
+  geom_sf(data = jornada_veg,
+          aes(fill = name),
+          color = NA) +
+  theme_minimal() +
+  scale_fill_paletteer_d(palette = "nbapalettes::suns_city") + # go check out view(palettes_d_names)
+  theme(panel.background = element_rect(color = "midnightblue",
+                                        size = 2,
+                                        fill = "peachpuff2"),
+        plot.background = element_rect(fill = "lightblue2"),
+        panel.grid.major = element_line(color = "violetred"),
+        axis.text.x = element_text(color = "red"))
 ```
